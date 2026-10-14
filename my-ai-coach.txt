@@ -1,0 +1,823 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d19">
+<title>AI Audio Coach — твой персональный аудиотренер</title>
+<style>
+:root {
+  --bg:#080d19; --panel:#0e1729; --panel2:#111e34;
+  --text:#f3f7ff; --muted:#a7b6d2; --line:#263d61;
+  --green:#5ef29a; --purple:#a36bff; --blue:#45b9ff;
+  --radius:18px; --max:1160px;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-padding-top:84px; }
+body {
+  margin:0; color:var(--text);
+  background:radial-gradient(ellipse at 80% 5%,#5931b12b,transparent 35%),
+  radial-gradient(ellipse at 5% 45%,#1270921a,transparent 35%),var(--bg);
+  font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+a { color:inherit; text-decoration:none; }
+button,input,select { font:inherit; }
+button,a,input,select { -webkit-tap-highlight-color:transparent; }
+button { cursor:pointer; }
+.container { width:min(var(--max),calc(100% - 40px)); margin:0 auto; }
+.site-header {
+  position:fixed; inset:0 0 auto; z-index:20;
+  background:#080d19d9; backdrop-filter:blur(16px);
+  border-bottom:1px solid #688ec129;
+}
+.nav { height:74px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.logo { display:inline-flex; align-items:center; gap:11px; font-weight:850; letter-spacing:-.04em; font-size:1.15rem; white-space:nowrap; }
+.logo-mark { color:var(--green); font-size:1.65rem; text-shadow:0 0 20px #36e88a80; }
+.nav-links { display:flex; gap:clamp(14px,2.5vw,32px); color:var(--muted); font-size:.91rem; }
+.nav-links a:hover,.footer a:hover { color:var(--green); }
+.btn {
+  border:1px solid transparent; border-radius:999px; padding:12px 20px;
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  font-weight:750; transition:transform .2s,box-shadow .2s,background .2s;
+}
+.btn:hover { transform:translateY(-2px); }
+.btn-primary { color:#06150d; background:linear-gradient(110deg,var(--green),#6dff7b); box-shadow:0 6px 26px #40ef8b20; }
+.btn-primary:hover { box-shadow:0 8px 32px #40ef8b50; }
+.btn-outline { color:var(--text); border-color:#5e7ed0; background:#101a30a8; }
+.btn-outline:hover { border-color:var(--green); }
+.menu-toggle { display:none; border:1px solid var(--line); background:var(--panel); color:white; border-radius:10px; padding:8px 11px; }
+
+.hero { min-height:630px; padding:150px 0 82px; position:relative; overflow:hidden; display:flex; align-items:center; }
+.hero::before {
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 72% 45%,#7d42e950,transparent 35%),
+  radial-gradient(ellipse at 85% 65%,#12c8c850,transparent 27%),
+  linear-gradient(105deg,#080d19 7%,#0b1024d9 44%,#17103c88 100%);
+}
+.hero::after {
+  content:""; position:absolute; width:520px; height:520px;
+  border:1px solid #a36bff32; border-radius:50%; right:-40px; top:80px;
+  box-shadow:0 0 0 48px #a36bff0b,0 0 0 100px #45b9ff08;
+  animation:orbit 18s linear infinite;
+}
+@keyframes orbit { to { transform:rotate(360deg); } }
+.hero-grid { position:relative; z-index:1; display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:36px; }
+.eyebrow { display:inline-flex; align-items:center; gap:8px; padding:6px 11px; border:1px solid #4eea982f; border-radius:999px; color:var(--green); background:#1a3a2b61; font-size:.82rem; font-weight:700; }
+h1 { font-size:clamp(2.6rem,5.4vw,4.65rem); line-height:1.04; letter-spacing:-.055em; margin:22px 0; max-width:700px; }
+.gradient-text { color:var(--green); background:linear-gradient(90deg,var(--green),#65d9ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero p { color:#c0cbe0; font-size:clamp(1rem,1.7vw,1.18rem); max-width:580px; }
+.hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+.hero-visual { min-height:370px; display:grid; place-items:center; position:relative; }
+.audio-orb {
+  width:min(330px,75vw); aspect-ratio:1; border-radius:50%; position:relative;
+  display:grid; place-items:center;
+  background:radial-gradient(circle at 35% 30%,#a7ffca,#37d88c 15%,#183e6b 48%,#15102e 72%);
+  box-shadow:0 0 70px #5ef29a30,inset -20px -25px 60px #050914;
+  animation:float 5s ease-in-out infinite;
+}
+.audio-orb::before,.audio-orb::after { content:""; position:absolute; border:1px solid #65e8d982; border-radius:50%; inset:-23px; transform:rotate(-22deg) scaleY(.36); }
+.audio-orb::after { inset:-49px; border-color:#9d70ff70; transform:rotate(28deg) scaleY(.42); }
+@keyframes float { 50% { transform:translateY(-12px) scale(1.015); } }
+.orb-icon { font-size:5rem; filter:drop-shadow(0 0 20px #a4ffe8); }
+.wave { position:absolute; display:flex; align-items:center; gap:5px; height:60px; bottom:22px; }
+.wave i { width:5px; border-radius:8px; background:var(--green); box-shadow:0 0 14px #5ef29a80; animation:wave 1s ease-in-out infinite alternate; }
+.wave i:nth-child(3n) { animation-delay:-.5s; }
+.wave i:nth-child(2n) { animation-delay:-.25s; }
+@keyframes wave { from { height:12px; opacity:.55; } to { height:48px; opacity:1; } }
+.float-card { position:absolute; padding:12px 15px; border:1px solid #40577d; border-radius:13px; background:#0b1427d9; backdrop-filter:blur(10px); box-shadow:0 14px 35px #0004; font-size:.85rem; }
+.float-card strong { display:block; color:var(--green); font-size:1.05rem; }
+.float-card.one { top:24px; left:0; }
+.float-card.two { bottom:27px; right:-4px; }
+
+section { padding:82px 0; }
+.section-head { max-width:720px; margin-bottom:32px; }
+.kicker { color:var(--green); text-transform:uppercase; letter-spacing:.13em; font-weight:800; font-size:.76rem; }
+h2 { font-size:clamp(2rem,4vw,2.8rem); line-height:1.13; letter-spacing:-.04em; margin:8px 0 12px; }
+.section-head p,.muted { color:var(--muted); }
+.features-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
+.feature-card,.panel,.why-card,.tech-badge,.money-card {
+  background:linear-gradient(145deg,#111d31,#0b1425);
+  border:1px solid var(--line); border-radius:var(--radius);
+}
+.feature-card { padding:23px 20px; min-height:190px; transition:transform .25s,border-color .25s,background .25s; }
+.feature-card:hover { transform:translateY(-5px); border-color:#5ef29a80; background:linear-gradient(145deg,#172b3a,#0c1526); }
+.feature-icon { width:48px; height:48px; display:grid; place-items:center; border-radius:14px; font-size:1.55rem; background:#1a4a4a; margin-bottom:17px; }
+.feature-card:nth-child(3n+2) .feature-icon { background:#38275f; }
+.feature-card:nth-child(3n) .feature-icon { background:#123f63; }
+h3 { margin:0 0 8px; font-size:1.06rem; line-height:1.35; }
+.feature-card p,.why-card p { color:var(--muted); margin:0; font-size:.91rem; }
+
+.steps { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; position:relative; }
+.step { padding:18px 15px; border-top:1px solid #314c70; position:relative; }
+.step-number { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; color:#06150d; background:var(--green); font-weight:900; margin-bottom:17px; box-shadow:0 0 24px #5ef29a26; }
+.step p { margin:0; color:var(--muted); font-size:.9rem; }
+.sample-layout { display:grid; grid-template-columns:1.1fr .9fr; gap:24px; align-items:start; }
+.phase-bar { display:grid; grid-template-columns:1fr 1fr 3fr 1fr; border-radius:14px; overflow:hidden; min-height:102px; border:1px solid #ffffff20; }
+.phase { padding:16px 12px; color:#07111c; display:flex; flex-direction:column; justify-content:center; font-weight:800; font-size:.87rem; }
+.phase small { font-weight:650; opacity:.8; margin-top:5px; }
+.warm { background:linear-gradient(135deg,#8effb9,#38d995); }
+.activate { background:linear-gradient(135deg,#ffe78a,#ffae42); }
+.main-phase { color:white; background:linear-gradient(135deg,#a06bff,#6542dc); }
+.cool { background:linear-gradient(135deg,#60d8ff,#3986ef); }
+.phase-details { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line); border-top:0; border-radius:0 0 14px 14px; overflow:hidden; }
+.phase-detail { padding:13px 10px; color:var(--muted); font-size:.78rem; border-right:1px solid var(--line); }
+.phase-detail:last-child { border:0; }
+.phase-detail b { color:var(--text); display:block; margin-bottom:3px; }
+.why-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.why-card { padding:19px; }
+.why-card span { font-size:1.7rem; display:block; margin-bottom:8px; }
+
+.demo-section { background:linear-gradient(180deg,#0a1221,#0d1728 55%,#09111e); border-top:1px solid #1c2c47; border-bottom:1px solid #1c2c47; }
+.demo-layout { display:grid; grid-template-columns:.9fr 1.1fr; gap:22px; align-items:start; }
+.panel { padding:25px; }
+.field { margin-bottom:22px; }
+.field:last-child { margin-bottom:0; }
+.field-label { display:block; font-weight:750; margin-bottom:10px; font-size:.94rem; }
+.choice-row { display:flex; flex-wrap:wrap; gap:8px; }
+.choice { position:relative; }
+.choice input { position:absolute; opacity:0; inset:0; cursor:pointer; }
+.choice span { display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border:1px solid #304768; background:#0b1527; color:#bdc9de; border-radius:10px; font-size:.86rem; transition:.2s; }
+.choice input:checked+span { border-color:var(--green); background:#163b2b; color:#eafff1; box-shadow:inset 0 0 0 1px #5ef29a35; }
+.choice input:focus-visible+span { outline:2px solid white; outline-offset:2px; }
+select { width:100%; background:#0a1425; color:var(--text); border:1px solid #304768; border-radius:10px; padding:12px; }
+.field-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.generate { width:100%; margin-top:5px; }
+.generate:disabled { opacity:.65; cursor:wait; }
+.form-error { color:#ff9eaa; min-height:1.3em; font-size:.85rem; margin:7px 0 0; }
+.result-panel { min-height:400px; }
+.result-empty { min-height:330px; display:grid; place-items:center; text-align:center; color:var(--muted); padding:25px; }
+.empty-icon { font-size:3.5rem; display:block; margin-bottom:12px; filter:drop-shadow(0 0 18px #5ef29a42); }
+.loader { display:none; min-height:330px; place-items:center; text-align:center; color:var(--muted); }
+.loader.active { display:grid; }
+.spinner { width:54px; height:54px; border:3px solid #2a3a58; border-top-color:var(--green); border-right-color:var(--purple); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 20px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.result-content[hidden],.result-empty[hidden],.loader[hidden] { display:none; }
+.result-title { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding-bottom:18px; border-bottom:1px solid var(--line); margin-bottom:15px; }
+.result-title h3 { font-size:1.25rem; margin-bottom:3px; }
+.result-title p { color:var(--muted); margin:0; font-size:.86rem; }
+.status { color:var(--green); font-size:.75rem; border:1px solid #5ef29a60; border-radius:999px; padding:5px 9px; white-space:nowrap; }
+.result-phase { display:grid; grid-template-columns:42px 1fr; gap:12px; padding:14px 0; border-bottom:1px solid #243652; }
+.result-phase:last-of-type { border:0; }
+.result-phase .phase-emoji { width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:#193e34; }
+.result-phase h4 { margin:0 0 3px; font-size:.97rem; }
+.result-phase .meta { color:var(--green); font-size:.78rem; margin-bottom:5px; }
+.result-phase p { color:#bdc9de; margin:0; font-size:.86rem; }
+.result-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:17px; }
+.result-actions .btn { flex:1; min-width:145px; }
+.player-status { display:none; color:var(--green); font-size:.85rem; margin-top:12px; }
+.player-status.show { display:block; }
+
+.lower-grid { display:grid; grid-template-columns:1fr 1.2fr; gap:28px; }
+.tech-list { display:flex; flex-wrap:wrap; gap:10px; }
+.tech-badge { padding:11px 14px; font-size:.88rem; color:#d7e3f7; border-radius:10px; }
+.roadmap { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+.roadmap-item { position:relative; padding-top:12px; }
+.roadmap-item::before { content:""; position:absolute; top:31px; left:46px; right:-14px; height:1px; background:linear-gradient(90deg,var(--green),#415a86); }
+.roadmap-item:last-child::before { display:none; }
+.roadmap-dot { width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--green); color:var(--green); background:var(--bg); border-radius:50%; font-weight:800; position:relative; z-index:1; margin-bottom:13px; }
+.roadmap-item h4 { font-size:.9rem; margin:0 0 5px; }
+.roadmap-item p { color:var(--muted); font-size:.82rem; margin:0; }
+
+.faq-list { display:grid; gap:9px; }
+.faq-item { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#0d1728; }
+.faq-question { width:100%; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:15px; padding:17px 19px; background:transparent; color:var(--text); border:0; font-weight:700; }
+.faq-question span:last-child { color:var(--green); font-size:1.2rem; transition:transform .2s; }
+.faq-question[aria-expanded="true"] span:last-child { transform:rotate(45deg); }
+.faq-answer { padding:0 19px 17px; color:var(--muted); }
+.faq-answer[hidden] { display:none; }
+.monetization { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.money-card { padding:20px; }
+.money-card span { font-size:1.7rem; }
+.money-card h3 { margin-top:10px; }
+.money-card p { color:var(--muted); margin:0; font-size:.88rem; }
+
+.footer { padding:32px 0; border-top:1px solid var(--line); background:#060a13; }
+.footer-grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
+.footer p { color:var(--muted); font-size:.82rem; margin:8px 0; }
+.footer-links { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:16px; color:#c8d4e8; font-size:.9rem; }
+.copyright { border-top:1px solid #1b2b43; margin-top:20px; padding-top:16px; display:flex; justify-content:space-between; gap:12px; color:#7f90ad; font-size:.78rem; }
+
+.reveal { opacity:0; transform:translateY(18px); transition:opacity .65s ease,transform .65s ease; }
+.reveal.visible { opacity:1; transform:none; }
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; scroll-behavior:auto!important; }
+  .reveal { opacity:1; transform:none; }
+}
+@media (max-width:950px) {
+  .features-grid { grid-template-columns:repeat(2,1fr); }
+  .hero-grid { grid-template-columns:1fr .8fr; }
+  .hero-visual { min-height:300px; }
+  .steps { grid-template-columns:repeat(3,1fr); }
+  .demo-layout { grid-template-columns:1fr; }
+  .lower-grid { grid-template-columns:1fr; }
+  .roadmap { grid-template-columns:repeat(3,1fr); row-gap:22px; }
+  .roadmap-item:nth-child(3)::before,.roadmap-item:last-child::before { display:none; }
+}
+@media (max-width:650px) {
+  .container { width:min(100% - 28px,var(--max)); }
+  .nav { height:66px; }
+  .logo { font-size:1rem; }
+  .logo-mark { font-size:1.4rem; }
+  .nav .btn { display:none; }
+  .menu-toggle { display:inline-flex; }
+  .nav-links {
+    display:none; position:absolute; top:65px; left:0; right:0;
+    padding:15px 22px 20px; background:#0a1120f5;
+    border-bottom:1px solid var(--line); flex-direction:column; gap:13px;
+  }
+  .nav-links.open { display:flex; }
+  .hero { padding:120px 0 55px; min-height:auto; }
+  .hero-grid { grid-template-columns:1fr; gap:15px; }
+  h1 { font-size:clamp(2.55rem,12vw,3.6rem); }
+  .hero-visual { min-height:275px; grid-row:1; margin:0 15px; }
+  .audio-orb { width:205px; }
+  .orb-icon { font-size:3.5rem; }
+  .float-card.one { top:5px; left:-4px; }
+  .float-card.two { bottom:0; right:-4px; }
+  section { padding:60px 0; }
+  .features-grid { grid-template-columns:1fr; gap:11px; }
+  .feature-card { min-height:auto; display:grid; grid-template-columns:48px 1fr; gap:0 14px; padding:18px; }
+  .feature-icon { grid-row:span 2; margin:0; }
+  .feature-card h3 { align-self:end; }
+  .steps { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .step { padding:14px 10px; }
+  .sample-layout { grid-template-columns:1fr; }
+  .phase-bar { grid-template-columns:1fr 1fr; }
+  .phase-details { grid-template-columns:repeat(2,1fr); }
+  .phase-detail:nth-child(2) { border-right:0; }
+  .phase-detail:nth-child(-n+2) { border-bottom:1px solid var(--line); }
+  .why-grid { grid-template-columns:repeat(2,1fr); }
+  .why-card { padding:15px; }
+  .panel { padding:18px; }
+  .field-grid { grid-template-columns:1fr; gap:16px; }
+  .roadmap { grid-template-columns:repeat(2,1fr); }
+  .roadmap-item:nth-child(2n)::before { display:none; }
+  .monetization { grid-template-columns:repeat(2,1fr); }
+  .footer-grid { grid-template-columns:1fr; }
+  .footer-links { justify-content:flex-start; }
+  .copyright { flex-direction:column; }
+}
+@media (max-width:390px) {
+  .why-grid,.monetization { grid-template-columns:1fr; }
+  .choice span { padding:8px 10px; }
+  .result-title { flex-direction:column; }
+}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="container nav">
+    <a class="logo" href="#top" aria-label="AI Audio Coach — на главную"><span class="logo-mark">〰</span><span>AI Audio Coach</span></a>
+    <nav class="nav-links" id="navLinks" aria-label="Основная навигация">
+      <a href="#features">Возможности</a>
+      <a href="#how">Как работает</a>
+      <a href="#demo">Демо</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-primary" href="#demo">Попробовать демо <span aria-hidden="true">↗</span></a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Открыть меню" aria-expanded="false">☰</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">✦ Умнее тренируйся с каждым треком</span>
+        <h1>Твой персональный <span class="gradient-text">аудиотренер с ИИ</span></h1>
+        <p>Музыка + голосовой коуч. Без камер, тренажёров и сложного оборудования. Только телефон и наушники.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#demo">Собрать тренировку <span>↓</span></a>
+          <a class="btn btn-outline" href="#features">Узнать больше</a>
+        </div>
+      </div>
+      <div class="hero-visual" aria-label="Абстрактная анимированная визуализация звука">
+        <div class="float-card one">🎧 <strong>Твой ритм</strong>Музыка под темп</div>
+        <div class="audio-orb">
+          <span class="orb-icon">♫</span>
+          <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="float-card two">✦ <strong>30 минут</strong>Фокус на цели</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Возможности</span>
+        <h2>Всё, что нужно для эффективной тренировки</h2>
+        <p>Персонализация, музыка и полезные подсказки — в одном аудиосценарии.</p>
+      </div>
+      <div class="features-grid">
+        <article class="feature-card reveal"><div class="feature-icon">👤</div><h3>Профиль пользователя</h3><p>Цели, уровень подготовки, ограничения и любимые жанры.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">🧠</div><h3>Генератор тренировки</h3><p>ИИ создаёт структуру по фазам и выбранной длительности.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">🎵</div><h3>Музыкальный движок</h3><p>Подбор треков по BPM, энергии и музыкальному жанру.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">🎙️</div><h3>Голосовой коуч</h3><p>TTS-озвучка фактов, мотивации и подсказок по технике.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">📚</div><h3>Контент-банк</h3><p>Проверенные факты, мифы и советы по фитнесу.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">💚</div><h3>Адаптация</h3><p>Потенциальная подстройка под пульс, самочувствие и поведение.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">👍</div><h3>Обратная связь</h3><p>Лайк или дизлайк треков, фактов и голоса для улучшения подбора.</p></article>
+        <article class="feature-card reveal"><div class="feature-icon">📊</div><h3>Пост-тренировочный отчёт</h3><p>Длительность, пройденные фазы и рекомендации на будущее.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Как это работает</span>
+        <h2>От цели до готового аудио — 6 шагов</h2>
+        <p>Сценарий собирается вокруг твоей тренировки, а не наоборот.</p>
+      </div>
+      <div class="steps">
+        <article class="step reveal"><div class="step-number">01</div><h3>Выбираешь параметры</h3><p>Цель, длительность, уровень и предпочтения.</p></article>
+        <article class="step reveal"><div class="step-number">02</div><h3>Строится план</h3><p>ИИ распределяет тренировку по фазам.</p></article>
+        <article class="step reveal"><div class="step-number">03</div><h3>Подбирается музыка</h3><p>Темп BPM и энергия соответствуют этапу.</p></article>
+        <article class="step reveal"><div class="step-number">04</div><h3>Добавляется голос</h3><p>Подсказки и мотивация в выбранном стиле.</p></article>
+        <article class="step reveal"><div class="step-number">05</div><h3>Всё микшируется</h3><p>Музыка и голос объединяются в аудиофайл.</p></article>
+        <article class="step reveal"><div class="step-number">06</div><h3>Тренируешься</h3><p>Слушаешь и двигаешься в своём ритме.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="example">
+    <div class="container sample-layout">
+      <div class="reveal">
+        <div class="section-head">
+          <span class="kicker">Пример тренировки</span>
+          <h2>30 минут в твоём ритме</h2>
+          <p>Пример структуры: темп и голос меняются вместе с нагрузкой.</p>
+        </div>
+        <div class="phase-bar" aria-label="Шкала фаз 30-минутной тренировки">
+          <div class="phase warm">Разминка<small>0–5 мин</small></div>
+          <div class="phase activate">Активация<small>5–10 мин</small></div>
+          <div class="phase main-phase">Основная часть<small>10–25 мин</small></div>
+          <div class="phase cool">Заминка<small>25–30 мин</small></div>
+        </div>
+        <div class="phase-details">
+          <div class="phase-detail"><b>BPM 90–110</b>Спокойный тон</div>
+          <div class="phase-detail"><b>BPM 110–120</b>Мотивация</div>
+          <div class="phase-detail"><b>BPM 120–140</b>Факты и энергия</div>
+          <div class="phase-detail"><b>BPM 80–90</b>Растяжка</div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="section-head"><span class="kicker">Почему это уникально</span><h2>Больше, чем плейлист</h2></div>
+        <div class="why-grid">
+          <article class="why-card"><span>🎓</span><h3>Образовательный слой</h3><p>Факты и советы дополняют музыку.</p></article>
+          <article class="why-card"><span>📵</span><h3>Без камер и тренажёров</h3><p>Достаточно телефона и наушников.</p></article>
+          <article class="why-card"><span>🎧</span><h3>Свободное прослушивание</h3><p>Сценарий можно слушать в удобном плеере.</p></article>
+          <article class="why-card"><span>🏃</span><h3>Разные активности</h3><p>Бег, йога и домашние тренировки.</p></article>
+          <article class="why-card"><span>🛡️</span><h3>Забота о восстановлении</h3><p>Напоминания о темпе и отдыхе.</p></article>
+          <article class="why-card"><span>🌐</span><h3>Несколько языков</h3><p>Возможность расширить аудиторию.</p></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="demo-section" id="demo">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="kicker">Интерактивное демо</span>
+        <h2>Собери свою аудиотренировку</h2>
+        <p>Выбери настройки — прототип покажет пример фаз, BPM и реплик коуча. Реальная генерация аудио пока не подключена.</p>
+      </div>
+      <div class="demo-layout">
+        <form class="panel reveal" id="workoutForm" novalidate>
+          <div class="field">
+            <span class="field-label">1. Твоя цель</span>
+            <div class="choice-row" role="radiogroup" aria-label="Цель тренировки">
+              <label class="choice"><input type="radio" name="goal" value="Похудение" checked><span>🔥 Похудение</span></label>
+              <label class="choice"><input type="radio" name="goal" value="Сила"><span>💪 Сила</span></label>
+              <label class="choice"><input type="radio" name="goal" value="Выносливость"><span>🏃 Выносливость</span></label>
+              <label class="choice"><input type="radio" name="goal" value="Восстановление"><span>🌿 Восстановление</span></label>
+              <label class="choice"><input type="radio" name="goal" value="Общая форма"><span>⚡ Общая форма</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">2. Длительность</span>
+            <div class="choice-row" role="radiogroup" aria-label="Длительность тренировки">
+              <label class="choice"><input type="radio" name="duration" value="20"><span>20 мин</span></label>
+              <label class="choice"><input type="radio" name="duration" value="30" checked><span>30 мин</span></label>
+              <label class="choice"><input type="radio" name="duration" value="45"><span>45 мин</span></label>
+              <label class="choice"><input type="radio" name="duration" value="60"><span>60 мин</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">3. Уровень подготовки</span>
+            <div class="choice-row" role="radiogroup" aria-label="Уровень подготовки">
+              <label class="choice"><input type="radio" name="level" value="Новичок" checked><span>🌱 Новичок</span></label>
+              <label class="choice"><input type="radio" name="level" value="Средний"><span>⚡ Средний</span></label>
+              <label class="choice"><input type="radio" name="level" value="Продвинутый"><span>🚀 Продвинутый</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">4. Жанры музыки <span class="muted">(можно несколько)</span></span>
+            <div class="choice-row">
+              <label class="choice"><input type="checkbox" name="genres" value="Pop" checked><span>Pop</span></label>
+              <label class="choice"><input type="checkbox" name="genres" value="Rock"><span>Rock</span></label>
+              <label class="choice"><input type="checkbox" name="genres" value="Electronic" checked><span>Electronic</span></label>
+              <label class="choice"><input type="checkbox" name="genres" value="Hip-hop"><span>Hip-hop</span></label>
+              <label class="choice"><input type="checkbox" name="genres" value="Chill"><span>Chill</span></label>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label class="field-label" for="voice">5. Голос коуча</label>
+              <select id="voice" name="voice">
+                <option value="Женский, энергичный">Женский, энергичный</option>
+                <option value="Мужской, энергичный">Мужской, энергичный</option>
+                <option value="Женский, спокойный">Женский, спокойный</option>
+                <option value="Мужской, спокойный">Мужской, спокойный</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label" for="frequency">6. Частота подсказок</label>
+              <select id="frequency" name="frequency">
+                <option value="2">Каждые 2 минуты</option>
+                <option value="5" selected>Каждые 5 минут</option>
+                <option value="10">Каждые 10 минут</option>
+              </select>
+            </div>
+          </div>
+
+          <p class="form-error" id="formError" role="alert"></p>
+          <button class="btn btn-primary generate" type="submit" id="generateBtn">✦ Сгенерировать тренировку</button>
+          <p class="muted" style="font-size:.78rem;margin:10px 0 0">Демо работает локально в браузере и не отправляет ваши параметры на сервер.</p>
+        </form>
+
+        <div class="panel result-panel" aria-live="polite" aria-atomic="true">
+          <div class="result-empty" id="resultEmpty">
+            <div><span class="empty-icon">🎧</span><h3>Твоя тренировка начинается здесь</h3><p>Заполни параметры слева и нажми «Сгенерировать тренировку» — здесь появится персональный сценарий.</p></div>
+          </div>
+          <div class="loader" id="loader" hidden>
+            <div><div class="spinner"></div><strong>Собираем твой сценарий…</strong><p>Подбираем фазы, темп и подсказки</p></div>
+          </div>
+          <div class="result-content" id="resultContent" hidden>
+            <div class="result-title">
+              <div><h3>Твоя аудиотренировка готова!</h3><p id="resultSummary"></p></div>
+              <span class="status">● Демо-сценарий</span>
+            </div>
+            <div id="phaseResults"></div>
+            <div class="result-actions">
+              <button class="btn btn-outline" id="playDemo" type="button">▶ Слушать демо</button>
+              <button class="btn btn-primary" id="downloadJson" type="button">⇩ Скачать сценарий</button>
+            </div>
+            <p class="player-status" id="playerStatus" role="status">▶ Демо-плеер запущен — реальное аудио не воспроизводится.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="technology">
+    <div class="container lower-grid">
+      <div class="reveal">
+        <div class="section-head"><span class="kicker">Технологии</span><h2>Стек проекта</h2><p>Возможный технологический набор для полноценной версии продукта.</p></div>
+        <div class="tech-list">
+          <span class="tech-badge">Python / FastAPI <small>· бэкенд</small></span>
+          <span class="tech-badge">LLM <small>· генерация текстов</small></span>
+          <span class="tech-badge">ElevenLabs / Google TTS / Yandex SpeechKit</span>
+          <span class="tech-badge">FFmpeg / pydub <small>· микширование</small></span>
+          <span class="tech-badge">Flutter / React Native <small>· мобильный клиент</small></span>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="section-head"><span class="kicker">Roadmap</span><h2>От идеи до MVP <span class="muted" style="font-size:1rem">(6 недель)</span></h2></div>
+        <div class="roadmap">
+          <article class="roadmap-item"><div class="roadmap-dot">1</div><h4>Неделя 1</h4><p>Исследование и база фактов</p></article>
+          <article class="roadmap-item"><div class="roadmap-dot">2</div><h4>Неделя 2</h4><p>Прототип генерации MP3</p></article>
+          <article class="roadmap-item"><div class="roadmap-dot">3</div><h4>Неделя 3</h4><p>Веб-интерфейс</p></article>
+          <article class="roadmap-item"><div class="roadmap-dot">4</div><h4>Неделя 4</h4><p>Тест на 10 пользователях</p></article>
+          <article class="roadmap-item"><div class="roadmap-dot">5</div><h4>Неделя 5</h4><p>Доработка логики</p></article>
+          <article class="roadmap-item"><div class="roadmap-dot">6</div><h4>Неделя 6</h4><p>Запуск MVP</p></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="container lower-grid">
+      <div class="reveal">
+        <div class="section-head"><span class="kicker">FAQ</span><h2>Частые вопросы</h2><p>Коротко о том, как устроен аудиокоуч.</p></div>
+      </div>
+      <div class="faq-list reveal">
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false" aria-controls="faq1"><span>Нужны ли камеры или тренажёры?</span><span>＋</span></button>
+          <div class="faq-answer" id="faq1" hidden>Нет. Для базового сценария достаточно телефона и наушников. Дополнительные датчики могут появиться в будущих версиях.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false" aria-controls="faq2"><span>Можно ли слушать в Spotify?</span><span>＋</span></button>
+          <div class="faq-answer" id="faq2" hidden>Идея — экспортировать готовый сценарий в MP3 или использовать фоновое наложение. Прямая интеграция со Spotify в этом прототипе не реализована и зависит от доступных API и лицензий.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false" aria-controls="faq3"><span>Это заменяет тренера?</span><span>＋</span></button>
+          <div class="faq-answer" id="faq3" hidden>Нет. Это цифровой помощник для мотивации и организации занятий, а не замена персональному тренеру или медицинскому специалисту.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false" aria-controls="faq4"><span>Безопасно ли это?</span><span>＋</span></button>
+          <div class="faq-answer" id="faq4" hidden>Сценарии должны учитывать ограничения и восстановление, но приложение не может гарантировать безопасность. Выбирай нагрузку по самочувствию и проконсультируйся с врачом при наличии медицинских противопоказаний.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false" aria-controls="faq5"><span>Сколько стоит?</span><span>＋</span></button>
+          <div class="faq-answer" id="faq5" hidden>Предварительная гипотеза для подписки — 299–499 ₽ в месяц. Это ориентир бизнес-модели, а не действующий тариф.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="monetization">
+    <div class="container">
+      <div class="section-head reveal"><span class="kicker">Монетизация</span><h2>Несколько источников роста</h2><p>Гибкая модель для пользователей и партнёров.</p></div>
+      <div class="monetization">
+        <article class="money-card reveal"><span>👑</span><h3>Подписка</h3><p>Премиум-сценарии и персонализация · ориентир 299–499 ₽/мес.</p></article>
+        <article class="money-card reveal"><span>🎙️</span><h3>Кастомные голоса</h3><p>Уникальные голоса, стили и пакеты коучинга.</p></article>
+        <article class="money-card reveal"><span>🏢</span><h3>B2B для фитнес-залов</h3><p>Брендированные аудиотренировки для клубов.</p></article>
+        <article class="money-card reveal"><span>🤝</span><h3>Партнёрские программы</h3><p>Коллаборации с брендами, авторами и продуктами.</p></article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div><a class="logo" href="#top"><span class="logo-mark">〰</span><span>AI Audio Coach</span></a><p>Твой путь к лучшей версии себя.</p></div>
+      <div class="footer-links">
+        <a href="mailto:hello@example.com">Контакты</a>
+        <a href="#social" aria-label="Telegram (демо-ссылка)">Telegram ↗</a>
+        <a href="#social" aria-label="ВКонтакте (демо-ссылка)">VK ↗</a>
+        <a href="#social" aria-label="YouTube (демо-ссылка)">YouTube ↗</a>
+      </div>
+    </div>
+    <div class="copyright">
+      <span>© 2025–2026 AI Audio Coach. Концепт-прототип.</span>
+      <span>Данный продукт не является медицинским изделием. При боли, головокружении или плохом самочувствии прекрати тренировку. При сомнениях обратись к врачу.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  // Мобильная навигация: закрываем меню после перехода к секции.
+  const menuToggle = document.getElementById("menuToggle");
+  const navLinks = document.getElementById("navLinks");
+
+  menuToggle.addEventListener("click", () => {
+    const opened = navLinks.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", String(opened));
+    menuToggle.textContent = opened ? "✕" : "☰";
+  });
+
+  navLinks.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      navLinks.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.textContent = "☰";
+    });
+  });
+
+  // Плавное появление элементов при прокрутке.
+  // Без поддержки IntersectionObserver всё остаётся видимым.
+  const revealItems = document.querySelectorAll(".reveal");
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealItems.forEach(item => observer.observe(item));
+  } else {
+    revealItems.forEach(item => item.classList.add("visible"));
+  }
+
+  // Аккордеон FAQ с корректными aria-атрибутами.
+  document.querySelectorAll(".faq-question").forEach(button => {
+    button.addEventListener("click", () => {
+      const isOpen = button.getAttribute("aria-expanded") === "true";
+      const answer = document.getElementById(button.getAttribute("aria-controls"));
+      button.setAttribute("aria-expanded", String(!isOpen));
+      answer.hidden = isOpen;
+    });
+  });
+
+  const form = document.getElementById("workoutForm");
+  const error = document.getElementById("formError");
+  const generateBtn = document.getElementById("generateBtn");
+  const emptyState = document.getElementById("resultEmpty");
+  const loader = document.getElementById("loader");
+  const resultContent = document.getElementById("resultContent");
+  const resultSummary = document.getElementById("resultSummary");
+  const phaseResults = document.getElementById("phaseResults");
+  const playButton = document.getElementById("playDemo");
+  const playerStatus = document.getElementById("playerStatus");
+
+  let currentScenario = null;
+  let generationToken = 0;
+
+  // Четыре фазы масштабируются под выбранную длительность.
+  function buildPhases(totalMinutes, goal, level, frequency) {
+    const shares = [0.17, 0.17, 0.50, 0.16];
+    const names = ["Разминка", "Активация", "Основная часть", "Заминка"];
+    const emojis = ["🌤️", "⚡", "🔥", "🌿"];
+
+    const bpms = goal === "Восстановление"
+      ? [[80,95],[90,105],[95,115],[70,85]]
+      : level === "Продвинутый"
+        ? [[95,110],[115,125],[130,150],[80,95]]
+        : [[90,110],[110,120],[120,140],[80,90]];
+
+    const cues = [
+      `Начинаем мягко. Найди комфортное дыхание и постепенно включайся в движение. Подсказки примерно каждые ${frequency} мин.`,
+      "Постепенно добавляй темп, сохраняя контроль движений. Не спеши — разогрев важен.",
+      goal === "Сила"
+        ? "Сосредоточься на технике и контролируемом усилии. Качество движения важнее скорости."
+        : goal === "Восстановление"
+          ? "Сохраняй лёгкую интенсивность. Расслабь плечи и ориентируйся на комфортное дыхание."
+          : "Ты уже в ритме! Держи устойчивый темп, пей воду и прислушивайся к своему телу.",
+      "Плавно снижаем интенсивность. Восстанови дыхание и заверши занятие лёгкой растяжкой без боли."
+    ];
+
+    const durations = shares.map(share => Math.floor(totalMinutes * share));
+    durations[2] += totalMinutes - durations.reduce((sum, value) => sum + value, 0);
+
+    let cursor = 0;
+
+    return names.map((name, index) => {
+      const start = cursor;
+      cursor += durations[index];
+
+      return {
+        name,
+        emoji: emojis[index],
+        start,
+        end: cursor,
+        duration: durations[index],
+        bpm: bpms[index],
+        cue: cues[index],
+        tip: ["Спокойный тон","Мотивация","Факты и мотивация","Расслабление"][index]
+      };
+    });
+  }
+
+  // Проверяем обязательные поля и собираем настройки формы.
+  function readSettings() {
+    const data = new FormData(form);
+    const genres = data.getAll("genres");
+
+    if (!data.get("goal") || !data.get("duration") || !data.get("level") || genres.length === 0) {
+      throw new Error("Выбери цель, длительность, уровень и хотя бы один музыкальный жанр.");
+    }
+
+    return {
+      goal: data.get("goal"),
+      duration: Number(data.get("duration")),
+      level: data.get("level"),
+      genres,
+      voice: data.get("voice"),
+      frequency: Number(data.get("frequency"))
+    };
+  }
+
+  // Создаём DOM-элементы через textContent, чтобы не вставлять пользовательские данные как HTML.
+  function renderScenario(scenario) {
+    resultSummary.textContent =
+      `${scenario.duration} минут · ${scenario.goal} · ${scenario.level} уровень`;
+
+    phaseResults.replaceChildren();
+
+    scenario.phases.forEach(phase => {
+      const article = document.createElement("article");
+      article.className = "result-phase";
+
+      const icon = document.createElement("div");
+      icon.className = "phase-emoji";
+      icon.textContent = phase.emoji;
+
+      const body = document.createElement("div");
+
+      const title = document.createElement("h4");
+      title.textContent = `${phase.name} · ${phase.start}–${phase.end} мин`;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `BPM ${phase.bpm[0]}–${phase.bpm[1]} · ${phase.tip}`;
+
+      const cue = document.createElement("p");
+      cue.textContent = `«${phase.cue}»`;
+
+      body.append(title, meta, cue);
+      article.append(icon, body);
+      phaseResults.append(article);
+    });
+
+    emptyState.hidden = true;
+    loader.hidden = true;
+    loader.classList.remove("active");
+    resultContent.hidden = false;
+    playerStatus.classList.remove("show");
+    playButton.textContent = "▶ Слушать демо";
+  }
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    error.textContent = "";
+
+    let settings;
+
+    try {
+      settings = readSettings();
+    } catch (validationError) {
+      error.textContent = validationError.message;
+      return;
+    }
+
+    currentScenario = null;
+    const token = ++generationToken;
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = "⏳ Генерируем…";
+
+    resultContent.hidden = true;
+    emptyState.hidden = true;
+    loader.hidden = false;
+    loader.classList.add("active");
+
+    // Имитация генерации в течение 1,4 секунды.
+    // Реальных запросов к API или ИИ нет.
+    window.setTimeout(() => {
+      if (token !== generationToken) return;
+
+      currentScenario = {
+        app: "AI Audio Coach — demo",
+        generatedAt: new Date().toISOString(),
+        mode: "mock",
+        note: "Это демонстрационный сценарий. Аудио не генерируется и не воспроизводится.",
+        ...settings,
+        phases: buildPhases(
+          settings.duration,
+          settings.goal,
+          settings.level,
+          settings.frequency
+        )
+      };
+
+      renderScenario(currentScenario);
+      generateBtn.disabled = false;
+      generateBtn.textContent = "✦ Сгенерировать тренировку";
+    }, 1400);
+  });
+
+  // Заглушка плеера: показывает статус вместо реального звука.
+  playButton.addEventListener("click", () => {
+    if (!currentScenario) return;
+
+    playerStatus.classList.toggle("show");
+
+    playButton.textContent = playerStatus.classList.contains("show")
+      ? "Ⅱ Остановить демо"
+      : "▶ Слушать демо";
+
+    if (playerStatus.classList.contains("show")) {
+      playerStatus.textContent =
+        "▶ Демо-плеер запущен — реальное аудио не воспроизводится.";
+    }
+  });
+
+  // Экспорт сценария в JSON через Blob — полностью на стороне браузера.
+  document.getElementById("downloadJson").addEventListener("click", () => {
+    if (!currentScenario) return;
+
+    const blob = new Blob(
+      [JSON.stringify(currentScenario, null, 2)],
+      { type: "application/json;charset=utf-8" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = "ai-audio-coach-workout.json";
+
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+</body>
+</html>
